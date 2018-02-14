@@ -1,0 +1,316 @@
+// jquery bootstrap file
+
+/*  +---------------------------+
+    |  DOM READINESS DETECTION  |
+    |  dependency: jQuery       |
+    +---------------------------+  */
+// run these functions when the DOM is ready
+
+$(document).ready(
+	function(){
+		//InitializeDatepicker();
+		InitializeForm();
+		InitializeFancybox();
+		adjustTourGrid();
+	}
+);
+
+
+
+
+/*  +-------------------------+
+    |  DATEPICKER             |
+    |  dependency: jQuery UI  |
+    +-------------------------+  */
+function InitializeDatepicker(){
+	//reformat birthday in profile page
+	if($("#profileForm_container #birthDay, #profilepurchaseForm_container #birthDay").length>0){
+		var dt = moment($("#profileForm_container #birthDay, #profilepurchaseForm_container #birthDay").val());
+		$("#profileForm_container #birthDay, #profilepurchaseForm_container #birthDay").val(dt.format('D MMMM YYYY'));
+	}
+	// initialize birthDay datepicker on signup and profile forms
+	if($("#SubscribeBootstrapOneForm_container #birthDay, #virginProfileForm_container #birthDay").length > 0){
+		var curyear=new Date();
+		curyear=curyear.getFullYear();
+		$("#birthDay:not(#SubscribeFormStepTwoNew_container #birthDay)").combodate({
+		    	format: "MM/DD/YYYY",
+		    	template: "MMM D YYYY",
+		    	firstItem:"name",
+		    	
+		    	minYear: curyear-103 ,
+		    	maxYear: curyear
+		});
+	}
+	
+	// initialize birthDay datepicker on signup and profile forms
+	if($("#UpdatebirthdayForm_container #birthDay").length > 0){
+		var curyear=new Date();
+		curyear=curyear.getFullYear();
+		
+		$("#birthDay").combodate({
+		    	format: "MM/DD/YYYY",
+		    	template: "MMM D YYYY",
+		    	firstItem:"name",
+		    	
+		    	minYear: curyear-103 ,
+		    	maxYear: curyear
+		});
+	}
+}
+
+
+
+
+/*  +----------------------+
+    |  FORMS               |
+    |  dependency: jQuery  |
+    +----------------------+  */
+function InitializeForm(){
+	// prepopulate country/state dropdown combo
+	if($("#country").length > 0){
+		if($("#country").val() !=''){
+			getStatesList($("#country").val());
+		}
+	}
+	// initializeFancyInput();
+}
+
+/**
+ * @abstract get list of states/provinces for a given country
+ * */
+function getStatesList(country){
+	if($("#state").length > 0){
+		defstate = $("#state").val();
+
+		$("#state").attr('disabled','disabled');
+		$("#country").attr('disabled','disabled');
+		$("#proceed").attr('disabled','disabled');
+		$.post(
+			'/service/subscribe/getstatesajax/format/json', // url
+			{'country':country}, // data
+			function(data){ 
+				EvaluateStateResponse(data,defstate); 
+			}, // callback
+			"json" // type
+		);
+		
+
+	}
+}
+
+/**
+ * @abstract populate dropdown select state/province
+ * */
+function EvaluateStateResponse(jsonObject,defstate){
+	$('#state').val('');
+	statelist = eval('('+jsonObject['statelists']+')');
+	
+	if(statelist !== false && statelist !== null){
+		// create new select element
+		var statelists = document.createElement('select');
+		statelists.id = 'state';
+		statelists.name = 'state';
+		statelists.errorref='country_state';
+		var newoption = document.createElement('option');
+		newoption.value = '';
+		newoption.text = "State";
+		newoption.selected = true;
+		try{
+			statelists.add(newoption,null);
+		}
+		catch(ex){
+			statelists.add(newoption);
+		}
+		
+		var stateChecked=false;
+		for(abbreviation in statelist){
+			// create new option element
+			var newoption = document.createElement('option');
+			newoption.value = abbreviation;
+			newoption.text = statelist[abbreviation];
+			if(defstate == abbreviation){
+				newoption.selected = true;
+				stateChecked=true;
+			}
+			// append option element to select element
+			try{
+				statelists.add(newoption,null);
+			}
+			catch(ex){
+				statelists.add(newoption);
+			}
+		}
+		$('#state').replaceWith(statelists);
+		if(stateChecked==false){
+			$('#country_state_validator_container').removeClass('invalid_input').removeClass('valid_input');
+
+			$("input[type=submit]").removeClass('form_valid');
+		}
+		
+
+
+
+		
+	}else if(document.getElementById('state').tagName != 'INPUT'){
+		// create new input text element
+		var statelists = document.createElement('input');
+		statelists.type = 'text';
+		statelists.id = 'state';
+		statelists.name = 'state';
+		
+		//statelists.value = defstate;
+		$('#state').replaceWith(statelists);
+		
+		if(typeof(defstate)=='undefined' || defstate==''){
+			$("#submit").removeClass('form_valid');
+		}
+		
+	}else{
+		$('#state').val(defstate);
+	}
+	
+	$('#state').attr('required','required');
+	$('#state').attr('errorref','country_state');
+	$('#state').attr('partner','country');
+	
+	$("#state").removeAttr('disabled');
+	$("#country").removeAttr('disabled');
+	$("#proceed").removeAttr('disabled');
+
+	$("#state").removeClass('dataInput');
+	$("#state").removeClass('js-userData');
+
+	$("#state").addClass('dataInput');
+	$("#state").addClass('js-userData'); 
+	
+	$('#state').focus();
+
+	
+}
+
+
+/*  +-------------------------------+
+    |  FANCYBOX                     |
+    |  dependency: jQuery fancybox  |
+    +-------------------------------+  */
+function InitializeFancybox(){
+	// fancybox images
+	if($(".fancybox").length > 0){
+		$(".fancybox").fancybox();
+	}
+}
+
+function adjustTourGrid(){
+  if($("#tour #tour_table").length >0){
+    var docWidth = $( document ).width();
+   
+     var i=0;
+     $("#tour #tour_table .headRow td").each(
+       function(){
+         //
+         i++;
+         $("#tour td:nth-of-type("+i+")").prepend("<span class='mob_tour_column_name'>" + $(this).text() + "</span>");
+     });   
+    
+  }
+}
+
+function redirectB4Login(){
+  var b4LoginURL= getCookie(nickelback_b4_login);
+  window.location = b4LoginURL;
+}
+
+function setCookie(c_name,value,exmins){
+	var exdate=new Date();
+	exdate.setMinutes(exdate.getMinutes() + exmins);
+	var c_value=encodeURIComponent(value) + ((exmins==null) ? "" : "; expires="+exdate.toUTCString());
+	document.cookie=c_name + "=" + c_value +"; path=/";
+}
+
+function getCookie(c_name){
+	var i,x,y,ARRcookies=document.cookie.split(";");
+	for (i=0;i<ARRcookies.length;i++){
+	  x=ARRcookies[i].substr(0,ARRcookies[i].indexOf("="));
+	  y=ARRcookies[i].substr(ARRcookies[i].indexOf("=")+1);
+	  x=x.replace(/^\s+|\s+$/g,"");
+	  if (x==c_name){
+	    return unescape(y);
+	  }
+	 }
+	return false;
+}
+
+
+/**
+ * fancy input bo implementation
+ */
+/*
+function initializeFancyInput(){
+ if ($('.dataInput').length > 0) {
+  var input = $('.dataInput');
+  var textVal = input.val();
+  if(textVal === "") {
+   input.removeClass('js-userData');
+  }else {
+   input.addClass('js-userData');
+  } 
+
+  $('.dataInput').focusout((event) => {
+   var input = $(event.target);
+   var textVal = input.val();
+   if(textVal === "") {
+    input.removeClass('js-userData');
+   }else {
+    input.addClass('js-userData');
+   } 
+  });
+ }
+}*/
+
+//listner
+
+function listener(event){
+ //var arr=eval('('+event.data+')');
+// $('#contest_iframe').css({height:arr.height});
+}
+
+if (window.addEventListener){
+ addEventListener("message", listener, false)
+} 
+else 
+{
+ attachEvent("onmessage", listener)
+}
+
+
+
+$(function () {
+	var fancyInputList = $(':input.dataInput');
+	
+	if (fancyInputList.length > 0) { 
+		
+		fancyInputList.each(function(index, element) {
+			var input = $(element);
+			var textVal = input.val().trim();
+
+		  if(textVal.length === 0) {
+		    $(input).removeClass('js-userData');
+		  } 
+		  else {
+		    input.addClass('js-userData');
+		  } 
+		  
+		  input.on('blur', function(event) {
+			  var input = $(event.target);
+			  var textVal = input.val();
+			  if(textVal === "") {
+			    input.removeClass('js-userData');
+			  } 
+			  else {
+			    input.addClass('js-userData');
+			  }
+		  });
+		});
+		
+	}
+});

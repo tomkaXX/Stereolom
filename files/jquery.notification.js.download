@@ -1,0 +1,67 @@
+/**
+ * Author: Andy Chipalu
+ * jquery plugin for displaying notification
+ * Dependency : jquery library, base stylesheet
+ * 
+ */
+
+$(function(){
+  if($('.user_notification_container .user_notification_div').length>0){
+    $('.user_notification_container .user_notification_div').notification();
+  }
+});
+
+(function ( $ ) {
+	
+	$.fn.notification = function(options) {
+			buttonClose(this);
+			return this;
+	};
+	
+	
+	
+	buttonClose = function(element) {
+		$(element).append("<span class='notification_close'></span>");
+		
+		$(element).find(".notification_close").on("click",function(){
+
+			var node_pointer=$(this).closest(".user_notification_container").attr('node_pointer');
+			$.post(
+					'/notification/close', // url
+					 { id: node_pointer},
+					function(data){
+						
+					}
+			);
+			$(this).closest(".user_notification_container").hide(1500);
+		});
+		
+		$(element).find(".close_permanently").on("click",function(){
+			var node_pointer=$(this).closest(".user_notification_container").attr('node_pointer');
+			
+			var ntf_cookie= getCookie('tso_notification');
+			if(ntf_cookie != false){
+				//alert(ntf_cookie);
+				var start= ntf_cookie.indexOf(node_pointer+"@");
+				var end= ntf_cookie.indexOf("++",start);
+				var old_value=ntf_cookie.substr(start,end-start);
+				var new_value= node_pointer+"@1893456000"; //2030 date
+				var ntf_cookie=ntf_cookie.replace(old_value,new_value);
+				setCookie('tso_notification',ntf_cookie,500000);
+			}
+			/*
+			$.post(
+					'/notification/close', // url
+					 { id: node_pointer},
+					function(data){
+						
+					}
+			);
+			*/
+			$(this).closest(".user_notification_container").hide(1500);
+			
+		});
+		
+	};
+	
+}( jQuery ));
